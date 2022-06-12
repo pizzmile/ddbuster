@@ -1,10 +1,10 @@
 # ddbuster
-Pdf downloader for andreadd's repository (aka studwiz).
+Pdf downloader for andreadd's repository (aka studwiz.com).
 
 ## Setup
 NOTE: you need an account on studwiz.com
 
-## Requirements
+### Requirements
 Install the requirements via
 ```
 python -m pip install -r requirements.txt
