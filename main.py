@@ -3,6 +3,7 @@ import logging
 import os.path
 from typing import TextIO
 import click
+from progress.bar import ChargingBar
 
 from buster import DDBuster
 
@@ -96,10 +97,13 @@ def downloadMultiple(source: TextIO, usenames: bool = False, filepath: str = Non
 
     # Download pdf
     if buster.login(credentials['username'], credentials['password']):
+        bar = ChargingBar('Download', max=len(urls))
         for key in urls.keys():
             url = urls[key]
             filename = key if usenames else None
             buster.download(url, filename=filename)
+            bar.next()
+        bar.finish()
     else:
         print('Unable to login, try later!')
 
