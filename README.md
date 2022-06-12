@@ -4,6 +4,12 @@ Pdf downloader for andreadd's repository (aka studwiz).
 ## Setup
 NOTE: you need an account on studwiz.com
 
+## Requirements
+Install the requirements via
+```
+python -m pip install -r requirements.txt
+
+
 ### Credentials
 You need to create an `auth.json` file or run the cli one time through the command `python main.py` to create automatically a structured empty auth file.
 The structure of the auth file must be the following:
