@@ -8,7 +8,7 @@ NOTE: you need an account on studwiz.com
 Install the requirements via
 ```
 python -m pip install -r requirements.txt
-
+```
 
 ### Credentials
 You need to create an `auth.json` file or run the cli one time through the command `python main.py` to create automatically a structured empty auth file.
