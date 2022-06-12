@@ -1,102 +1,119 @@
 import json
 import logging
-import re
-from bs4 import BeautifulSoup
-from requests import Session
+import os.path
+from typing import TextIO
+import click
 
-logger = logging.getLogger(__name__)
+from buster import DDBuster
 
 
-class DDBuster:
+# Setup logger
+# TODO: setup logger
 
-    def __init__(self):
-        self.__session = Session()
-        self.__session.headers = {
-            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.36'
-        }
 
-    def __find_urls(self, string):
-        regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-        url = re.findall(regex, string)
-        return [x[0] for x in url]
+# NOTE: if your have no "auth.json" file, you need to create it,
+# otherwise you should find one empty after the first you run the script.
+# Inside "auth.json" you must set:
+#   1. add "username": YOUR-USERNAME
+#   2. add "password": YOUR-PASSWORD
 
-    def __fetch_download_url(self, url: str) -> str or None:
-        response = self.__session.get(url=url)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            scripts = soup.findAll('script')
+# Check if "auth.json" exists, else create a new one empty
+if not os.path.exists('auth.json'):
+    empty_auth = {'username': 'YOUR-USERNAME', 'password': 'YOUR-PASSWORD'}
+    with open('auth.json', 'w') as authfile:
+        json.dump(empty_auth, authfile)
+        authfile.close()
+    logging.debug('Created new empty file "auth.json"')
+# Load credentials
+with open('auth.json', 'r') as authfile:
+    credentials = json.load(authfile)
+    authfile.close()
+    logging.debug('Credentials loaded successfully')
 
-            download_script = next(filter(lambda script: '"src"' in script.text, scripts), None)
-            if download_script is not None:
-                urls = self.__find_urls(download_script.text)
-                target_url = next(filter(lambda url: 'pdf_auto_download.php' in url, urls), None)
+# Load configuration
+with open("config.json", 'r') as configfile:
+    config = json.load(configfile)
 
-                if target_url is not None:
-                    logger.debug(f'Download url found: {target_url}')
-                    return target_url
+    if "headers" in config.keys():
+        headers = config['headers']
+        logging.debug(f'Headers found: {headers}')
+    else:
+        headers = None
 
-                else:
-                    logger.debug('Unable to find valid url')
-                    return None
+    if "downloadPath" in config.keys():
+        download_path = config['downloadPath']
+        logging.debug(f'Output path found: {download_path}')
+        if not os.path.exists(download_path):
+            os.makedirs(download_path)
+            logging.debug(f'Created new directory {download_path}')
+    else:
+        download_path = None
 
-            logger.debug('Unable to locate the download script')
-            return None
+    configfile.close()
 
-        logger.debug(f'URL {url} not working')
-        return None
 
-    def __save_pdf(self, filename: str, pdf_bytes: bytes, filepath: str = None):
-        # Build path
-        if filepath is not None:
-            path = filepath + "/"
-        else:
-            path = "./"
+@click.command()
+@click.argument('url',
+                nargs=1, type=click.STRING) # help="Url of the pdf to download"
+@click.option('--filename', '-fn', help="Filename of the output .pdf file",
+              nargs=1, type=click.STRING, default=None)
+@click.option('--filepath', '-fp', help="Path of the output .pdf file",
+              nargs=1, type=click.Path(exists=True), default=None)
+def download(url: str, filename: str = None, filepath: str = None):
+    # Choose download path
+    if filepath is not None:
+        dp = filepath
+    else:
+        dp = download_path
+    # Initialize client
+    buster = DDBuster(headers=headers, download_path=dp)
 
-        try:
-            # Save file at path
-            with open(f'{path}{filename}.pdf', 'wb') as pdffile:
-                pdffile.write(pdf_bytes)
-                pdffile.close()
-            logger.debug('File saved successfully')
+    # Download pdf
+    if buster.login(credentials['username'], credentials['password']):
+        buster.download(url, filename=filename)
+    else:
+        print('Unable to login, try later!')
 
-        except Exception as e:
-            logger.error("Exception occurred!", exc_info=True)
 
-    def login(self, username: str, password: str) -> bool:
-        login_url = "https://www.studwiz.com/user/userAccount.php"
-        payload = {
-            'email': username,
-            'password': password,
-            'loginSubmit': "Sign In"
-        }
-        response = self.__session.post(url=login_url, data=payload)
+@click.command()
+@click.argument('source',
+                nargs=1, type=click.File('r')) # help='Source .json file containing {"PDF-NAME": "PDF-URL"} fields'
+@click.option('--usenames', '-un', help='Use keys of the .json source file as names',
+              nargs=1, type=click.BOOL, default=False)
+@click.option('--filepath', '-fp', help="Path of the output .pdf file",
+              nargs=1, type=click.Path(exists=True), default=None)
+def downloadMultiple(source: TextIO, usenames: bool = False, filepath: str = None):
+    # Load urls
+    urls = json.load(source)
 
-        if response.status_code == 200:
-            logger.debug('Logged in!')
-            return True
-        else:
-            logger.debug(f'Unable to log in, reason: {response.status_code}')
-            return False
+    # Choose download path
+    if filepath is not None:
+        dp = filepath
+    else:
+        dp = download_path
+    # Initialize client
+    buster = DDBuster(headers=headers, download_path=dp)
 
-    def download(self, url: str):
-        target_url = self.__fetch_download_url(url)
-        response = self.__session.get(target_url)
-        if response.status_code == 200:
-            logger.debug('Download successful')
-            filename = url.split("/")[-1]
-            self.__save_pdf(filename, response.content)
-        else:
-            logger.debug('Unable to download the file')
+    # Download pdf
+    if buster.login(credentials['username'], credentials['password']):
+        for key in urls.keys():
+            url = urls[key]
+            filename = key if usenames else None
+            buster.download(url, filename=filename)
+    else:
+        print('Unable to login, try later!')
+
+
+@click.group(help="CLI to download pdf files from studwiz for POLIMI")
+def cli():
+    pass
+
+
+def main():
+    cli.add_command(download)
+    cli.add_command(downloadMultiple)
+    cli()
 
 
 if __name__ == '__main__':
-    with open('auth.json', 'r') as authfile:
-        credentials = json.load(authfile)
-        authfile.close()
-
-    buster = DDBuster()
-    if buster.login(credentials['username'], credentials['password']):
-        url = input('Enter a url to download: ')
-        buster.download(url)
-    else:
-        print('Unable to login, try later!')
+    main()
