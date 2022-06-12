@@ -4,8 +4,37 @@ Pdf downloader for andreadd's repository (aka studwiz).
 ## Setup
 NOTE: you need an account on studwiz.com
 
+### Credentials
 You need to create an `auth.json` file or run the cli one time through the command `python main.py` to create automatically a structured empty auth file.
-Inside the file you need to make sure that there are the following values:
-1. `"username": YOUR-USERNAME`
-2. `"password": YOUR-PASSWORD`
+The structure of the auth file must be the following:
+```
+{
+  "username": YOUR-USERNAME,
+  "password": YOUR-PASSWORD
+}
+```
 Replace ´YOUR-USERNAME´ with the username (or email) to your account on studwiz.com and `YOUR-PASSWORD` with the corresponding password.
+
+### Configuration
+Inside the `ddbuster` folder you should have the file `config.json` that specify some general configuration (already containing default values).
+```
+{
+  "downloadPath": DOWNLOAD-PATH,
+  "headers": HEADERS
+}
+```
+* `DOWNLOAD-PATH` specify the path of the output PDF files;
+* `HEADERS` specify the headers used by the HTTP client to perform requests.
+
+## Usage
+There are two available commands:
+* `download`: download one PDF given its url
+* `downloadMultiple`: download multiple PDF given a JSON formatted file containing their urls
+
+The JSON file used by `downloadMultiple` must contain a pair `"KEY": "URL"` for each pdf you want to download.
+```
+{
+  "KEY-1": "URL-1",
+  "KEY-2": "URL-2",
+  ...
+}
