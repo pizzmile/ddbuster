@@ -1,4 +1,4 @@
-# <span style="color: dodgerblue;">DDBUSTER</span>
+# <span style="color: blue;">DDBUSTER</span>
 Pdf downloader for [andreadd](https://www.andreadd.it) repository (aka [studwiz.com](https://www.studwiz.com)).
 
 ## Setup
