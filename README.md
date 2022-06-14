@@ -35,7 +35,7 @@ Inside the `ddbuster` folder you should have the file `config.json` that specify
 ## Usage
 There are two available commands:
 * `download`: download one PDF given its url
-* `downloadMultiple`: download multiple PDF given a JSON formatted file containing their urls
+* `downloadMultiple`: download multiple PDFs given a JSON formatted file containing their urls
 
 The JSON file used by `downloadMultiple` must contain a pair `"KEY": "URL"` for each pdf you want to download.
 ```
