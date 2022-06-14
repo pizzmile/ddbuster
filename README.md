@@ -47,5 +47,5 @@ The JSON file used by `downloadMultiple` must contain a pair `"KEY": "URL"` for 
 ```
 
 Each command has its options and arguments. To find out more about the usage you can type:
-* `python main.py`for general help
-* `python main.py COMMAND --help`for specific help
+* `python main.py` for general help
+* `python main.py COMMAND --help` for specific help
