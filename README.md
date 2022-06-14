@@ -1,5 +1,5 @@
 # ddbuster
-Pdf downloader for andreadd's repository (aka studwiz.com).
+Pdf downloader for [andreadd](https://www.andreadd.it) repository (aka [studwiz.com](https://www.studwiz.com)).
 
 ## Setup
 NOTE: you need an account on studwiz.com
